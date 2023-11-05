@@ -1,11 +1,19 @@
 #include <unistd.h>
 #include <cstdio>
+#include <iostream>
+#include <chrono>
+#include <map>
+#include <tuple>
+#include <thread>
 
 #include "ev3dev.h"
 
 using namespace std;
 using namespace ev3dev;
 
+using steady_clock = std::chrono::steady_clock;
+
+steady_clock::time_point start;
 // CurrentReading
 
 int currentReadL2, currentReadL1, currentReadR1, currentReadR2;
@@ -33,10 +41,25 @@ double previousError = 0, integral = 0, derivative = 0;
 int baseSpeed = 50;
 double motorLeftSpeed = 0, motorRightSpeed = 0;
 
-//Curve Acc false == left
 int accStraight = 0, accCurve = 0;
 bool curveDirection = false;
 
+void startTimer() {
+    start = steady_clock::now();
+}
+
+double getElapsedTime() {
+    auto now = steady_clock::now();
+    auto elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(now - start).count();
+    return elapsed_seconds;
+}
+
+void updateValues(double v1, double v2, double v3) {
+    kP = v1;
+    kI = v2;
+    kD = v3;
+
+}
 
 void setup() {
     int L2S = csL2.reflected_light_intensity();
@@ -112,7 +135,7 @@ void PIDProgram() {
     motorRightSpeed = baseSpeed + pidOutput;
     if (motorLeftSpeed + accCurve < 900 ) {
         mm11.set_speed_sp(int(motorLeftSpeed + accCurve));
-        mm12.set_speed_sp(int(motorLeftSpeed + accCurve);
+        mm12.set_speed_sp(int(motorLeftSpeed + accCurve));
     } else {
         mm11.set_speed_sp(900);
         mm12.set_speed_sp(900);
@@ -149,9 +172,25 @@ int main ()
         right = button::right.pressed ();
         setup();
     }
+    std::map<double, std::tuple<double, double, double>> timedEvents = {
+            {1.25, std::make_tuple(10.0, 20.0, 30.0)}, // At 1.25 seconds, update values to these
+            // You can add more time points as needed
+    };
     left = false;
     while (!left) {
         left = button::left.pressed ();
+        double currentTime = getElapsedTime();
+
+        // Check if the current time matches or exceeds any key in the timedEvents map
+        for (auto& [keyTime, values] : timedEvents) {
+            if (currentTime >= keyTime) {
+                auto& [v1, v2, v3] = values;
+                updateValues(v1, v2, v3);
+                // Remove or comment out the key from the map if you only want to update once
+                timedEvents.erase(keyTime);
+                break; // Assuming you only want to update once per time point
+            }
+        }
         PIDProgram();
     }
 
