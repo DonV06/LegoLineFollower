@@ -38,7 +38,7 @@ double errL2 = 0, errL1 = 0, errR1 = 0, errR2 = 0;
 int maxL1 = 0, maxL2 = 0, maxR1 = 0, maxR2 = 0;
 double previousError = 0, integral = 0, derivative = 0;
 //Speed adjustments
-int baseSpeed = 50;
+int baseSpeed = 500;
 double motorLeftSpeed = 0, motorRightSpeed = 0;
 
 int accStraight = 0, accCurve = 0;
@@ -92,17 +92,15 @@ void PIDProgram() {
     errL1 = 10*(maxL1 - currentReadL1)/(maxL1 - minL1);
     errR1 = 10*(maxR1 - currentReadR1)/(maxR1 - minR1);
     errR2 = 100*(maxR2 - currentReadR2)/(maxR2 - minR2);
-    // If maxL1 - leftOuterValue > maxR1 - rightOuterValue + 10 Then
-    //    direction = "False"
-    //  EndIf
+   
 
     if (maxL2 - currentReadL2 > maxR2 - currentReadR2 + 100) {
         curveDirection = false;
     } else if (maxL2 - currentReadL2 < maxR2 - currentReadR2 - 100) {
         curveDirection = true;
     }
-    //If (leftOuterValue>maxL1-10) And (leftInnerValue>maxL2-10) And (rightInnerValue>maxR2-10) And (rightOuterValue>maxR1-10) Then
-    if (currentReadL1 > maxL1 - 10 && currentReadL2 > maxL2 - 10 && currentReadR2 > maxR2 - 10 && currentReadR1 > maxR1 - 10) {
+    //If (leftOuterValue>maxL1-100) And (leftInnerValue>maxL2-100) And (rightInnerValue>maxR2-100) And (rightOuterValue>maxR1-100) Then
+    if (currentReadL1 > maxL1 - 100 && currentReadL2 > maxL2 - 100 && currentReadR2 > maxR2 - 100 && currentReadR1 > maxR1 - 100) {
         if (curveDirection) {
             mm11.set_speed_sp(baseSpeed + accCurve);
             mm12.set_speed_sp(baseSpeed + accCurve);
